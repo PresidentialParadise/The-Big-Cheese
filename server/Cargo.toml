@@ -8,3 +8,5 @@ edition = "2018"
 [dependencies]
 gotham = "0.6.0"
 mongodb = "2.0.1"
+serde = "1.0.130"
+tokio = "1.12.0"
