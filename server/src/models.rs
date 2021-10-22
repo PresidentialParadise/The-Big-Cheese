@@ -1,3 +1,4 @@
+use mongodb::bson::oid::ObjectId;
 // use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
@@ -36,34 +37,35 @@ enum Measurement {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Recipe {
-    // _id: Option<ObjectId>,
-    title: String,
-    description: String,
-    servings: String,
-    ingredients: Vec<Ingredient>,
-    instructions: Vec<String>,
-    tags: Vec<String>,
-    categories: Vec<String>,
-    prep_time: String,
-    cook_time: String,
+pub struct Recipe {
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    pub id: Option<ObjectId>,
+    pub title: String,
+    pub description: String,
+    pub servings: String,
+    pub ingredients: Vec<Ingredient>,
+    pub instructions: Vec<String>,
+    pub tags: Vec<String>,
+    pub categories: Vec<String>,
+    pub prep_time: String,
+    pub cook_time: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Ingredient {
+pub struct Ingredient {
     title: String,
     note: String,
     quantity: Quantity,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Quantity {
+pub struct Quantity {
     value: String,
     unit: Option<u8>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct User {
+pub struct User {
     name: String,
     // ? alternative: recipe_ids: Vec<ObjectId>
     recipes: Vec<Recipe>,
