@@ -2,7 +2,7 @@ use axum::{extract::Extension, response::IntoResponse, Json};
 
 use crate::{db_connection::DBClient, error::CheeseError, models::Recipe};
 
-use futures::stream::{StreamExt, TryStreamExt};
+use futures::stream::TryStreamExt;
 
 pub async fn index() -> impl IntoResponse {
     "Hello World"

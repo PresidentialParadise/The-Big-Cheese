@@ -8,24 +8,26 @@ use mongodb::{
 use crate::models::{Recipe, User};
 
 #[derive(Clone)]
-pub struct RecipeRepository {
-    recipes: Collection<Recipe>,
+pub struct Recipes {
+    collection: Collection<Recipe>,
 }
 
-impl RecipeRepository {
-    pub fn new(recipes: Collection<Recipe>) -> RecipeRepository {
-        RecipeRepository { recipes }
+impl Recipes {
+    pub fn new(recipes: Collection<Recipe>) -> Recipes {
+        Recipes {
+            collection: recipes,
+        }
     }
     pub async fn _create_recipe(&self, recipe: Recipe) -> Result<InsertOneResult, Error> {
-        self.recipes.insert_one(recipe, None).await
+        self.collection.insert_one(recipe, None).await
     }
 
     pub async fn _read_recipe(&self, id: ObjectId) -> Result<Option<Recipe>, Error> {
-        self.recipes.find_one(doc! { "_id": id}, None).await
+        self.collection.find_one(doc! { "_id": id}, None).await
     }
 
     pub async fn get_all_recipes(&self) -> Result<mongodb::Cursor<Recipe>, Error> {
-        self.recipes.find(None, None).await
+        self.collection.find(None, None).await
     }
 
     pub async fn _update_recipe(
@@ -33,38 +35,40 @@ impl RecipeRepository {
         id: ObjectId,
         recipe: Recipe,
     ) -> Result<UpdateResult, Error> {
-        self.recipes
+        self.collection
             .replace_one(doc! {"_id": id}, recipe, None)
             .await
     }
 
     pub async fn _delete_recipe(&self, id: ObjectId) -> Result<DeleteResult, Error> {
-        self.recipes.delete_one(doc! { "_id": id }, None).await
+        self.collection.delete_one(doc! { "_id": id }, None).await
     }
 }
 
 #[derive(Clone)]
-pub struct UserRepository {
-    users: Collection<User>,
+pub struct Users {
+    collection: Collection<User>,
 }
 
-impl UserRepository {
-    pub fn new(users: Collection<User>) -> UserRepository {
-        UserRepository { users }
+impl Users {
+    pub fn new(users: Collection<User>) -> Users {
+        Users { collection: users }
     }
     pub async fn _create_user(&self, user: User) -> Result<InsertOneResult, Error> {
-        self.users.insert_one(user, None).await
+        self.collection.insert_one(user, None).await
     }
 
     pub async fn _read_user(&self, id: ObjectId) -> Result<mongodb::Cursor<User>, Error> {
-        self.users.find(doc! { "_id": id}, None).await
+        self.collection.find(doc! { "_id": id}, None).await
     }
 
     pub async fn _update_user(&self, id: ObjectId, user: User) -> Result<UpdateResult, Error> {
-        self.users.replace_one(doc! {"_id": id}, user, None).await
+        self.collection
+            .replace_one(doc! {"_id": id}, user, None)
+            .await
     }
 
     pub async fn _delete_user(&self, id: ObjectId) -> Result<DeleteResult, Error> {
-        self.users.delete_one(doc! { "_id": id }, None).await
+        self.collection.delete_one(doc! { "_id": id }, None).await
     }
 }
