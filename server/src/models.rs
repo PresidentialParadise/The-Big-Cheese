@@ -2,41 +2,29 @@ use mongodb::bson::oid::ObjectId;
 // use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
-enum Measurement {
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Measurement {
     /// Grams
-    #[serde(rename = "kg")]
     Kilogram,
-    #[serde(rename = "g")]
     Gram,
-    #[serde(rename = "mg")]
     Milligram,
     /// Litres
-    #[serde(rename = "l")]
     Litre,
-    #[serde(rename = "dl")]
     Decilitre,
-    #[serde(rename = "ml")]
     Millilitre,
     /// Spoons
-    #[serde(rename = "tbs")]
     Tablespoon,
-    #[serde(rename = "tsp")]
     Teaspoon,
     /// "Measurements"
-    #[serde(rename = "gl")]
     Gallon,
-    #[serde(rename = "qt")]
     Quart,
-    #[serde(rename = "pt")]
     Pint,
-    #[serde(rename = "cup")]
     Cup,
     /// Yeet
     Custom(String),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Recipe {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
@@ -47,26 +35,30 @@ pub struct Recipe {
     pub instructions: Vec<String>,
     pub tags: Vec<String>,
     pub categories: Vec<String>,
-    pub prep_time: String,
-    pub cook_time: String,
+    pub prep_time: usize, // in minutes
+    pub cook_time: usize, // in minutes
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Ingredient {
-    title: String,
-    note: String,
-    quantity: Quantity,
+    pub title: String,
+    pub note: String,
+    pub quantity: Option<Quantity>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Quantity {
-    value: String,
-    unit: Option<u8>,
+    pub value: u8,
+    pub unit: Measurement,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct User {
-    name: String,
-    // ? alternative: recipe_ids: Vec<ObjectId>
-    recipes: Vec<Recipe>,
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    pub id: Option<ObjectId>,
+    pub username: String,
+    pub display_name: String,
+    pub hashed_password: String,
+    pub admin: bool,
+    pub recipes: Vec<ObjectId>,
 }

@@ -1,35 +1,16 @@
-//! Handlers are not a focal point of this example.
-//!
-//! We've used a macro here for brevity but this is NOT how you would implement a handler in
-//! a real world application.
+use axum::{extract::Extension, response::IntoResponse, Json};
 
-use gotham::handler::IntoResponse;
-use gotham::state::State;
+use crate::{db_connection::DBClient, error::CheeseError, models::Recipe};
 
-macro_rules! generic_handler {
-    ($($t:ident),*) => { $(
-        pub fn $t(state: State) -> (State, impl IntoResponse) {
-            (state, stringify!($t))
-        }
-    )+ }}
+use futures::stream::{StreamExt, TryStreamExt};
 
-generic_handler!(index);
-
-pub mod users {
-    use super::*;
-    generic_handler!(index);
+pub async fn index() -> impl IntoResponse {
+    "Hello World"
 }
 
-pub mod recipes {
-    use super::*;
-    generic_handler!(index);
-}
-
-pub mod checkout {
-    use super::*;
-
-    pub mod address {
-        use super::*;
-        generic_handler!(create, update, delete);
-    }
+pub async fn recipes(
+    Extension(db_client): Extension<DBClient>,
+) -> Result<Json<Vec<Recipe>>, CheeseError> {
+    let cursor = db_client.recipe_repo.get_all_recipes().await?;
+    Ok(Json(cursor.try_collect().await?))
 }

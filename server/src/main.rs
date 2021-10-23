@@ -1,28 +1,43 @@
 use std::env;
 
-use mongodb::{options::ClientOptions, Collection};
+use axum::{handler::get, AddExtensionLayer, Router};
+use dotenv::dotenv;
 
-use crate::{models::Recipe, routes::router};
+use std::net::SocketAddr;
+
+use crate::db_connection::DBClient;
+
+mod db_connection;
+mod error;
+mod handlers;
 mod models;
 mod repository;
 mod routes;
+use handlers::*;
 
 #[tokio::main]
 async fn main() {
-    let client_uri = env::var("MONGODB_URI").expect("Missing MONGODB_URI env var");
-    let db_name = env::var("MONGODB_NAME").expect("Missing MONGO_DB_NAME env var");
+    dotenv().expect("Failed to read .env");
 
-    let options = ClientOptions::parse(&client_uri).await.expect("oops");
-    let client = mongodb::Client::with_options(options).expect("oops");
-    let db = client.database(&db_name);
+    let client_uri = env::var("DBURI").expect("Missing DB_URI in .env");
+    let db_name = env::var("DBNAME").expect("Missing DB_NAME in .env");
 
-    let _recipes: Collection<Recipe> = db.collection("recipes");
+    let client = DBClient::new(client_uri, &db_name)
+        .await
+        .expect("Failed to connect to mongodb client");
 
-    let addr = "127.0.0.1:7878";
-    println!("Listening for requests at http://{}", addr);
+    // build our application with a route
+    let app = Router::new()
+        .route("/", get(index))
+        .route("/recipes", get(recipes))
+        .layer(AddExtensionLayer::new(client));
 
-    // All incoming requests are delegated to the router for further analysis and dispatch
-    gotham::start(addr, router());
+    // run it
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    println!("listening on http://{}", addr);
+
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
 }
-
-const HELLO_WORLD: &str = "Hello World!";

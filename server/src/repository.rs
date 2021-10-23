@@ -7,6 +7,7 @@ use mongodb::{
 
 use crate::models::{Recipe, User};
 
+#[derive(Clone)]
 pub struct RecipeRepository {
     recipes: Collection<Recipe>,
 }
@@ -19,8 +20,12 @@ impl RecipeRepository {
         self.recipes.insert_one(recipe, None).await
     }
 
-    pub async fn _read_recipe(&self, id: ObjectId) -> Result<mongodb::Cursor<Recipe>, Error> {
-        self.recipes.find(doc! { "_id": id}, None).await
+    pub async fn _read_recipe(&self, id: ObjectId) -> Result<Option<Recipe>, Error> {
+        self.recipes.find_one(doc! { "_id": id}, None).await
+    }
+
+    pub async fn get_all_recipes(&self) -> Result<mongodb::Cursor<Recipe>, Error> {
+        self.recipes.find(None, None).await
     }
 
     pub async fn _update_recipe(
@@ -38,6 +43,7 @@ impl RecipeRepository {
     }
 }
 
+#[derive(Clone)]
 pub struct UserRepository {
     users: Collection<User>,
 }
