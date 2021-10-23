@@ -1,3 +1,4 @@
+#![allow(clippy::unused_async)]
 use std::env;
 
 use axum::{handler::get, AddExtensionLayer, Router};
@@ -13,6 +14,8 @@ mod handlers;
 mod models;
 mod repository;
 mod routes;
+
+#[allow(clippy::wildcard_imports)]
 use handlers::*;
 
 #[tokio::main]
