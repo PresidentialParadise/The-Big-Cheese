@@ -8,7 +8,13 @@
 //! - `GET /recipes/:id`: get a specific Recipe.
 //! - `PUT /recipes/:id`: update a specific Recipe.
 //! - `DELETE /recipes/:id`: delete a specific Recipe.
+//! - `GET /users`: return a JSON list of user.
+//! - `POST /users`: create a new User.
+//! - `GET /users/:id`: get a specific User.
+//! - `PUT /users/:id`: update a specific User.
+//! - `DELETE /users/:id`: delete a specific User.
 
+#![warn(clippy::all, clippy::pedantic)]
 #![allow(clippy::unused_async)]
 use std::env;
 
@@ -47,6 +53,11 @@ async fn main() {
         .route(
             "/recipes/:id",
             get(fetch_recipe).patch(update_recipe).delete(delete_recipe),
+        )
+        .route("/users", get(fetch_users).post(push_user))
+        .route(
+            "users/:id",
+            get(fetch_user).patch(update_user).delete(delete_user),
         )
         .layer(AddExtensionLayer::new(client));
 

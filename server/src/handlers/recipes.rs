@@ -2,9 +2,9 @@ use std::str::FromStr;
 
 use axum::{
     extract::{Extension, Path},
-    response::IntoResponse,
     Json,
 };
+use futures::TryStreamExt;
 use mongodb::{
     bson::oid::ObjectId,
     results::{DeleteResult, InsertOneResult, UpdateResult},
@@ -15,12 +15,6 @@ use crate::{
     error::CheeseError,
     models::{Recipe, RecipeList},
 };
-
-use futures::stream::TryStreamExt;
-
-pub async fn index() -> impl IntoResponse {
-    "Hello World"
-}
 
 pub async fn fetch_recipes(
     Extension(db_client): Extension<DBClient>,

@@ -57,6 +57,11 @@ pub struct Quantity {
     pub unit: Measurement,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserList {
+    pub users: Vec<User>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct User {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
