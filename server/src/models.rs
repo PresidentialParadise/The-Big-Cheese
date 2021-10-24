@@ -24,6 +24,11 @@ pub enum Measurement {
     Custom(String),
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RecipeList {
+    pub recipes: Vec<Recipe>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Recipe {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]

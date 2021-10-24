@@ -18,11 +18,11 @@ impl Recipes {
             collection: recipes,
         }
     }
-    pub async fn _create_recipe(&self, recipe: Recipe) -> Result<InsertOneResult, Error> {
+    pub async fn create_recipe(&self, recipe: Recipe) -> Result<InsertOneResult, Error> {
         self.collection.insert_one(recipe, None).await
     }
 
-    pub async fn _read_recipe(&self, id: ObjectId) -> Result<Option<Recipe>, Error> {
+    pub async fn read_recipe(&self, id: ObjectId) -> Result<Option<Recipe>, Error> {
         self.collection.find_one(doc! { "_id": id}, None).await
     }
 
@@ -30,17 +30,13 @@ impl Recipes {
         self.collection.find(None, None).await
     }
 
-    pub async fn _update_recipe(
-        &self,
-        id: ObjectId,
-        recipe: Recipe,
-    ) -> Result<UpdateResult, Error> {
+    pub async fn update_recipe(&self, id: ObjectId, recipe: Recipe) -> Result<UpdateResult, Error> {
         self.collection
             .replace_one(doc! {"_id": id}, recipe, None)
             .await
     }
 
-    pub async fn _delete_recipe(&self, id: ObjectId) -> Result<DeleteResult, Error> {
+    pub async fn delete_recipe(&self, id: ObjectId) -> Result<DeleteResult, Error> {
         self.collection.delete_one(doc! { "_id": id }, None).await
     }
 }
