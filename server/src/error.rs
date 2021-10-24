@@ -9,6 +9,8 @@ use thiserror::Error;
 pub enum CheeseError {
     #[error("MongoDB encountered an error")]
     Mongo(#[from] mongodb::error::Error),
+    #[error("Encountered an ObjectID error")]
+    Oid(#[from] mongodb::bson::oid::Error),
 }
 
 impl IntoResponse for CheeseError {
@@ -21,6 +23,10 @@ impl IntoResponse for CheeseError {
             Self::Mongo(e) => {
                 eprintln!("MongoDB error: {:?}", e);
                 Self::Body::from("MongoDB did a fuckywucky")
+            }
+            Self::Oid(e) => {
+                eprintln!("ObjectID error: {:?}", e);
+                Self::Body::from("ObjectID did a fuckywucky")
             }
         };
 
