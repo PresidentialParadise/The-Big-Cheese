@@ -30,7 +30,6 @@ mod error;
 mod handlers;
 mod models;
 mod repository;
-mod routes;
 
 #[allow(clippy::wildcard_imports)]
 use handlers::*;
@@ -56,13 +55,13 @@ async fn main() {
         )
         .route("/users", get(fetch_users).post(push_user))
         .route(
-            "users/:id",
+            "/users/:id",
             get(fetch_user).patch(update_user).delete(delete_user),
         )
         .layer(AddExtensionLayer::new(client));
 
     // run it
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
     println!("listening on http://{}", addr);
 
     axum::Server::bind(&addr)

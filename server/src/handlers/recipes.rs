@@ -10,19 +10,14 @@ use mongodb::{
     results::{DeleteResult, InsertOneResult, UpdateResult},
 };
 
-use crate::{
-    db_connection::DBClient,
-    error::CheeseError,
-    models::{Recipe, RecipeList},
-};
+use crate::{db_connection::DBClient, error::CheeseError, models::Recipe};
 
 pub async fn fetch_recipes(
     Extension(db_client): Extension<DBClient>,
-) -> Result<Json<RecipeList>, CheeseError> {
+) -> Result<Json<Vec<Recipe>>, CheeseError> {
     let cursor = db_client.recipe_repo.get_all_recipes().await?;
-    Ok(Json(RecipeList {
-        recipes: cursor.try_collect().await?,
-    }))
+
+    Ok(Json(cursor.try_collect().await?))
 }
 
 pub async fn fetch_recipe(
