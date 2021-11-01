@@ -8,6 +8,33 @@ defaults:
     working-directory: server
 
 jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      TEST_DB_URI: "mongodb://localhost:27017"
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.6.0
+        with:
+          mongodb-version: 4.4
+
+      - name: Run cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path server/Cargo.toml
+
   check:
     name: Check
     runs-on: ubuntu-latest
