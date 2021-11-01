@@ -6,7 +6,6 @@ use axum::{
 use thiserror::Error;
 use tracing::{event, Level};
 
-
 #[derive(Error, Debug)]
 pub enum CheeseError {
     #[error("MongoDB encountered an error")]

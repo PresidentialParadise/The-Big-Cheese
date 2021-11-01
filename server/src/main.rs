@@ -38,9 +38,7 @@ use tracing::{event, Level};
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt()
-        .with_max_level(Level::INFO)
-        .init();
+    tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
     if let Err(e) = dotenv() {
         event!(Level::WARN, "error finding dotenv file: {}. When not providing environment variables through a .env file this is normal", e);
