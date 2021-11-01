@@ -21,11 +21,11 @@ impl IntoResponse for CheeseError {
     fn into_response(self) -> axum::http::Response<Self::Body> {
         let bb = match self {
             Self::Mongo(e) => {
-                eprintln!("MongoDB error: {:?}", e);
+                log::error!("MongoDB error: {:?}", e);
                 Self::Body::from("MongoDB did a fuckywucky")
             }
             Self::Oid(e) => {
-                eprintln!("ObjectID error: {:?}", e);
+                log::error!("ObjectID error: {:?}", e);
                 Self::Body::from("ObjectID did a fuckywucky")
             }
         };
