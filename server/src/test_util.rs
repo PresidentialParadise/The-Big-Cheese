@@ -27,6 +27,7 @@ pub fn test_db<F, Res>(f: F) -> bool
         }) {
         client_uri
     } else {
+        eprintln!("WARNING: NOT RUNNING TEST DUE TO LACK OF DATABASE URI");
         return false;
     };
 
