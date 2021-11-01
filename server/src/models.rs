@@ -1,9 +1,9 @@
 use mongodb::bson::oid::ObjectId;
 // use mongodb::bson::oid::ObjectId;
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
+use uuid::Uuid;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Measurement {
@@ -70,32 +70,48 @@ pub struct User {
     pub admin: bool,
 
     pub recipes: Vec<ObjectId>,
-    pub tokens: Vec<DatedToken>
+    pub tokens: Vec<DatedToken>,
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
-pub struct Token{
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
+pub struct Token {
     pub token: Uuid,
+}
+
+impl Token {
+    pub fn new(t: Uuid) -> Self {
+        Self { token: t }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct DatedToken {
     pub token: Token,
-    pub date: DateTime<Utc>
+    pub date: DateTime<Utc>,
 }
 
 impl DatedToken {
     pub fn generate() -> Self {
         DatedToken {
-            token: Token{token: Uuid::new_v4()},
+            token: Token {
+                token: Uuid::new_v4(),
+            },
             date: Utc::now(),
+        }
+    }
+
+    pub fn expired(&self, d: Duration) -> bool {
+        if let Ok(i) = chrono::Duration::from_std(d) {
+            self.date + i < Utc::now()
+        } else {
+            true
         }
     }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Config {
-    expiration_time: Duration
+    pub expiration_time: Duration,
 }
 
 impl Default for Config {
@@ -106,8 +122,7 @@ impl Default for Config {
     }
 }
 
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct Meta {
-    config: Config
+    pub config: Config,
 }
