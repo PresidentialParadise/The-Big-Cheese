@@ -15,7 +15,11 @@
 //! - `DELETE /users/:id`: delete a specific User.
 
 #![warn(clippy::all, clippy::pedantic)]
-#![allow(clippy::unused_async)]
+#![allow(
+    clippy::unused_async,
+    clippy::missing_errors_doc,
+    clippy::must_use_candidate
+)]
 use std::env;
 
 use axum::{

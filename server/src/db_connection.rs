@@ -12,6 +12,7 @@ pub struct DBClient {
 }
 
 impl DBClient {
+    /// Create a new mongodb client, containing the repositories used throughout the server.
     pub async fn new(client_uri: impl AsRef<str>, db_name: impl AsRef<str>) -> Result<Self, Error> {
         let client = Client::with_uri_str(client_uri).await?;
         let database = client.database(db_name.as_ref());
@@ -28,6 +29,7 @@ impl DBClient {
         })
     }
 
+    #[doc(hidden)]
     pub async fn delete_db(&self) {
         self.database.drop(None).await.expect("couldn't drop db");
     }
