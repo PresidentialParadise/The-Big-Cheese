@@ -22,6 +22,8 @@ pub async fn verify(users: &Users, meta: &MetaRepo, token: Token) -> Result<User
 
     // TODO: test
     if dt.expired(config.expiration_time) {
+        users.remove_token(&user, dt).await?;
+
         return Err(VerifyError::Expired);
     }
 
