@@ -8,6 +8,7 @@ pub struct DBClient {
     database: Database,
     pub recipe_repo: repository::Recipes,
     pub user_repo: repository::Users,
+    pub meta_repo: repository::MetaRepo,
 }
 
 impl DBClient {
@@ -16,12 +17,14 @@ impl DBClient {
         let database = client.database(db_name.as_ref());
         let recipe_repo = repository::Recipes::new(database.collection("recipes"));
         let user_repo = repository::Users::new(database.collection("users"));
+        let meta_repo = repository::MetaRepo::new(database.collection("meta"));
 
         Ok(Self {
             client,
             database,
             recipe_repo,
             user_repo,
+            meta_repo,
         })
     }
 }
