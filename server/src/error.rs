@@ -4,6 +4,8 @@ use axum::{
     response::IntoResponse,
 };
 use thiserror::Error;
+use tracing::{event, Level};
+
 
 #[derive(Error, Debug)]
 pub enum CheeseError {
@@ -21,11 +23,11 @@ impl IntoResponse for CheeseError {
     fn into_response(self) -> axum::http::Response<Self::Body> {
         let bb = match self {
             Self::Mongo(e) => {
-                log::error!("MongoDB error: {:?}", e);
+                event!(Level::ERROR, "MongoDB error: {:?}", e);
                 Self::Body::from("MongoDB did a fuckywucky")
             }
             Self::Oid(e) => {
-                log::error!("ObjectID error: {:?}", e);
+                event!(Level::ERROR, "ObjectID error: {:?}", e);
                 Self::Body::from("ObjectID did a fuckywucky")
             }
         };
