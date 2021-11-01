@@ -35,6 +35,8 @@ mod handlers;
 mod models;
 mod repository;
 
+pub mod test_util;
+
 #[allow(clippy::wildcard_imports)]
 use handlers::*;
 
@@ -108,3 +110,4 @@ fn random_password() -> String {
     }
     pw
 }
+

@@ -53,6 +53,34 @@ impl Users {
     pub fn new(users: Collection<User>) -> Self {
         Self { collection: users }
     }
+
+    /// Creates a user in the database. Should usually be done using the [`register`] function
+    /// (which calls this method).
+    ///
+    /// ```
+    /// # use big_cheese_server::test_util::test_db;
+    /// use big_cheese_server::models::User;
+    /// # test_db(|client| async move {
+    ///     let users = &client.user_repo;
+    ///     let user = User {
+    ///        id: None,
+    ///        username: "test".into(),
+    ///        display_name: "tester".into(),
+    ///        hashed_password: "something".into(),
+    ///        admin: false,
+    ///        recipes: vec![],
+    ///        tokens: vec![],
+    ///    };
+    ///
+    ///     users.create_user(user.clone()).await.unwrap();
+    ///
+    ///     let mut stored_user = users.get_user_by_name(&user.username).await.unwrap().unwrap();
+    ///     assert!(stored_user.id.is_some());
+    ///     // remove to test equality with the original user
+    ///     stored_user.id = None;
+    ///     assert_eq!(user, stored_user);
+    /// # });
+    /// ```
     pub async fn create_user(&self, user: User) -> Result<InsertOneResult, Error> {
         self.collection.insert_one(user, None).await
     }
@@ -129,6 +157,30 @@ impl MetaRepo {
         Self { collection: meta }
     }
 
+    /// looks if a meta (and with it a config) is already in the database.
+    /// If not, this method creates a default version.
+    ///
+    /// This method should be called whenever the server starts up. If not, [`get_config`] panics.
+    ///
+    /// ```should_panic
+    /// # use big_cheese_server::test_util::test_db_panic;
+    /// use std::panic::catch_unwind;
+    /// # test_db_panic(|client| async move {
+    ///     let meta = &client.meta_repo;
+    ///     meta.get_config().await;
+    /// # });
+    /// ```
+    ///
+    /// ```
+    /// # use big_cheese_server::test_util::test_db;
+    /// # test_db(|client| async move {
+    ///     let meta = &client.meta_repo;
+    ///
+    ///     meta.set_default_meta_if_not_exists().await.unwrap();
+    ///
+    ///     assert!(meta.get_config().await.is_ok());
+    /// # });
+    /// ```
     pub async fn set_default_meta_if_not_exists(&self) -> Result<(), Error> {
         if self.collection.find_one(doc! {}, None).await?.is_none() {
             self.collection.insert_one(Meta::default(), None).await?;
@@ -146,6 +198,10 @@ impl MetaRepo {
         Ok(())
     }
 
+    /// Gets the server wide config from the database. Make sure that this config is present.
+    /// To ensure this, use [`set_default_meta_if_not_exists`].
+    ///
+    /// Examples of using this method can be found in the documentation of [`set_default_meta_if_not_exists`].
     pub async fn get_config(&self) -> Result<Config, Error> {
         let res = self
             .collection
