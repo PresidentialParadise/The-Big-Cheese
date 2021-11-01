@@ -7,7 +7,7 @@ use mongodb::{
 
 use crate::auth::register;
 use crate::error::CheeseError;
-use crate::models::{Config, Meta, Recipe, Token, User};
+use crate::models::{Config, DatedToken, Meta, Recipe, Token, User};
 use futures::StreamExt;
 
 #[derive(Clone)]
@@ -71,10 +71,27 @@ impl Users {
             .await
     }
 
-    pub async fn get_user_for_token(&self, t: Token) -> Result<Option<User>, Error> {
-        let d = to_bson(&t).unwrap();
+    pub async fn get_user_for_token(&self, token: Token) -> Result<Option<User>, Error> {
+        let d = to_bson(&token).unwrap();
         self.collection
             .find_one(doc! { "tokens": {"$elemMatch": {"token": d}}}, None)
+            .await
+    }
+
+    pub async fn remove_token(
+        &self,
+        user: &User,
+        token: &DatedToken,
+    ) -> Result<UpdateResult, Error> {
+        let d = to_bson(token).unwrap();
+        self.collection
+            .update_one(
+                doc! { "username": &user.username },
+                doc! {"$pull": {
+                    "tokens": d
+                }},
+                None,
+            )
             .await
     }
 
