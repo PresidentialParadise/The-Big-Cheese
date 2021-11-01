@@ -27,4 +27,8 @@ impl DBClient {
             meta_repo,
         })
     }
+
+    pub async fn delete_db(&self) {
+        self.database.drop(None).await.expect("couldn't drop db")
+    }
 }
