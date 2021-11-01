@@ -18,7 +18,7 @@
 #![allow(clippy::unused_async)]
 use std::env;
 
-use axum::{handler::get, AddExtensionLayer, Router};
+use axum::{handler::get, handler::post, AddExtensionLayer, Router};
 use dotenv::dotenv;
 
 use std::net::SocketAddr;
@@ -30,6 +30,7 @@ mod error;
 mod handlers;
 mod models;
 mod repository;
+mod auth;
 
 #[allow(clippy::wildcard_imports)]
 use handlers::*;
@@ -59,15 +60,17 @@ async fn main() {
             "/recipes/:id",
             get(fetch_recipe).patch(update_recipe).delete(delete_recipe),
         )
-        .route("/users", get(fetch_users).post(push_user))
+        .route("/users", get(fetch_users))
         .route(
             "/users/:id",
             get(fetch_user).patch(update_user).delete(delete_user),
         )
+        .route("/users/register", post(register))
+        .route("/users/login", post(login))
         .layer(AddExtensionLayer::new(client));
 
     // run it
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 8000));
     event!(Level::INFO, "listening on http://{}", addr);
 
     axum::Server::bind(&addr)
