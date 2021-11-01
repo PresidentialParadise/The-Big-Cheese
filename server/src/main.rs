@@ -110,4 +110,3 @@ fn random_password() -> String {
     }
     pw
 }
-

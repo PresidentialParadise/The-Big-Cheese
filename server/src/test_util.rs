@@ -1,9 +1,9 @@
 use crate::db_connection::DBClient;
-use uuid::Uuid;
-use tokio::runtime::Runtime;
 use std::env;
 use std::future::Future;
 use std::panic::resume_unwind;
+use tokio::runtime::Runtime;
+use uuid::Uuid;
 
 /// Use this function to temporarily crate a mongodb database
 /// given the env var `TEST_DB_URI` or `DB_URI` (preferring `TEST_DB_URI`).
@@ -13,18 +13,16 @@ use std::panic::resume_unwind;
 /// To ensure `should_panic` tests pass when no database URI is provided, call [`test_db_panic`]
 #[allow(unused)]
 pub fn test_db<F, Res>(f: F) -> bool
-    where
-        F: 'static + Send + FnOnce(DBClient) -> Res,
-        Res: Future<Output=()> + Send,
+where
+    F: 'static + Send + FnOnce(DBClient) -> Res,
+    Res: Future<Output = ()> + Send,
 {
     let _ignored = dotenv::dotenv();
 
     let name = format!("test_db_{}", Uuid::new_v4());
 
-    let client_uri = if let Ok(client_uri) = env::var("TEST_DB_URI")
-        .or_else(|_| {
-            env::var("DB_URI")
-        }) {
+    let client_uri = if let Ok(client_uri) = env::var("TEST_DB_URI").or_else(|_| env::var("DB_URI"))
+    {
         client_uri
     } else {
         eprintln!("WARNING: NOT RUNNING TEST DUE TO LACK OF DATABASE URI");
@@ -33,14 +31,15 @@ pub fn test_db<F, Res>(f: F) -> bool
 
     let rt = Runtime::new().expect("create runtime");
     rt.block_on(async move {
-        let client = DBClient::new(client_uri, name).await
+        let client = DBClient::new(client_uri, name)
+            .await
             .expect("start mongodb client");
-
 
         let local_client = client.clone();
         let res = tokio::spawn(async move {
-            f(local_client).await
-        }).await;
+            f(local_client).await;
+        })
+        .await;
 
         client.delete_db().await;
 
@@ -56,12 +55,13 @@ pub fn test_db<F, Res>(f: F) -> bool
 }
 
 /// Panics when tests could not be run due to the lack of db uri. This is to
-/// make sure should_panic tests stay working without a uri.
+/// make sure `should_panic` tests stay working without a uri.
 #[allow(unused)]
+#[allow(clippy::missing_panics_doc)]
 pub fn test_db_panic<F, Res>(f: F)
-    where
-        F: 'static + Send + FnOnce(DBClient) -> Res,
-        Res: Future<Output=()> + Send,
+where
+    F: 'static + Send + FnOnce(DBClient) -> Res,
+    Res: Future<Output = ()> + Send,
 {
     if !test_db(f) {
         panic!("no db found but test should panic");

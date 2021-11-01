@@ -29,6 +29,6 @@ impl DBClient {
     }
 
     pub async fn delete_db(&self) {
-        self.database.drop(None).await.expect("couldn't drop db")
+        self.database.drop(None).await.expect("couldn't drop db");
     }
 }
