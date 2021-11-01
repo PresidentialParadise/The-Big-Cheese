@@ -34,9 +34,15 @@ mod repository;
 #[allow(clippy::wildcard_imports)]
 use handlers::*;
 
+use tracing::{event, Level};
+
 #[tokio::main]
 async fn main() {
-    dotenv().expect("Failed to read .env");
+    tracing_subscriber::fmt().with_max_level(Level::INFO).init();
+
+    if let Err(e) = dotenv() {
+        event!(Level::WARN, "error finding dotenv file: {}. When not providing environment variables through a .env file this is normal", e);
+    }
 
     let client_uri = env::var("DB_URI").expect("Missing DB_URI in .env");
     let db_name = env::var("DB_NAME").expect("Missing DB_NAME in .env");
@@ -62,7 +68,7 @@ async fn main() {
 
     // run it
     let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
-    println!("listening on http://{}", addr);
+    event!(Level::INFO, "listening on http://{}", addr);
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
