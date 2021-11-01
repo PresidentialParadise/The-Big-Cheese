@@ -1,6 +1,9 @@
 use mongodb::bson::oid::ObjectId;
 // use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+use chrono::{DateTime, Utc};
+use std::time::Duration;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Measurement {
@@ -65,5 +68,46 @@ pub struct User {
     pub display_name: String,
     pub hashed_password: String,
     pub admin: bool,
+
     pub recipes: Vec<ObjectId>,
+    pub tokens: Vec<DatedToken>
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+pub struct Token{
+    pub token: Uuid,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+pub struct DatedToken {
+    pub token: Token,
+    pub date: DateTime<Utc>
+}
+
+impl DatedToken {
+    pub fn generate() -> Self {
+        DatedToken {
+            token: Token{token: Uuid::new_v4()},
+            date: Utc::now(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Config {
+    expiration_time: Duration
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            expiration_time: chrono::Duration::hours(8).to_std().expect("in range"),
+        }
+    }
+}
+
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Meta {
+    config: Config
 }
