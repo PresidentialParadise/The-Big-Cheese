@@ -52,7 +52,7 @@ async fn main() {
     let client_uri = env::var("DB_URI").expect("Missing DB_URI in .env");
     let db_name = env::var("DB_NAME").expect("Missing DB_NAME in .env");
     let admin_user_name = env::var("ADMIN_USER_NAME").unwrap_or_else(|_| "admin".to_string());
-    let admin_user_password = env::var("ADMIN_USER_NAME").unwrap_or_else(|_| random_password());
+    let admin_user_password = env::var("ADMIN_USER_PASSWORD").unwrap_or_else(|_| random_password());
 
     let client = DBClient::new(client_uri, &db_name)
         .await
