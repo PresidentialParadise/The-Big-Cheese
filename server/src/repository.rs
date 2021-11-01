@@ -100,7 +100,7 @@ impl Users {
     }
 
     pub async fn get_user_for_token(&self, token: Token) -> Result<Option<User>, Error> {
-        let d = to_bson(&token).unwrap();
+        let d = to_bson(&token)?;
         self.collection
             .find_one(doc! { "tokens": {"$elemMatch": {"token": d}}}, None)
             .await
@@ -111,7 +111,7 @@ impl Users {
         user: &User,
         token: &DatedToken,
     ) -> Result<UpdateResult, Error> {
-        let d = to_bson(token).unwrap();
+        let d = to_bson(token)?;
         self.collection
             .update_one(
                 doc! { "username": &user.username },
