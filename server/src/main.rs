@@ -20,6 +20,17 @@
     clippy::missing_errors_doc,
     clippy::must_use_candidate
 )]
+
+mod auth;
+mod cors;
+mod db_connection;
+mod error;
+mod handlers;
+mod models;
+mod repository;
+
+pub mod test_util;
+
 use std::env;
 
 use axum::{
@@ -32,20 +43,13 @@ use std::net::SocketAddr;
 
 use crate::db_connection::DBClient;
 
-mod auth;
-mod db_connection;
-mod error;
-mod handlers;
-mod models;
-mod repository;
-
-pub mod test_util;
-
 #[allow(clippy::wildcard_imports)]
 use handlers::*;
 
 use rand::prelude::IteratorRandom;
 use tracing::{event, Level};
+
+use big_cheese_server::cors::CorsLayer;
 
 #[tokio::main]
 async fn main() {
@@ -90,7 +94,8 @@ async fn main() {
         )
         .route("/users/register", post(register))
         .route("/users/login", post(login))
-        .layer(AddExtensionLayer::new(client));
+        .layer(AddExtensionLayer::new(client))
+        .layer(CorsLayer::default());
 
     // run it
     let addr = SocketAddr::from(([127, 0, 0, 1], 8000));

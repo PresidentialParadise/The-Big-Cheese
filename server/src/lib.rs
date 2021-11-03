@@ -12,4 +12,5 @@ pub mod handlers;
 pub mod models;
 pub mod repository;
 
+pub mod cors;
 pub mod test_util;
