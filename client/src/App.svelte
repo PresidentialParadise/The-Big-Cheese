@@ -7,6 +7,9 @@
     import {error_message} from "./typescript/error";
     import Login from "./user/Login.svelte";
     import Register from "./user/Register.svelte";
+    import PrivateRoute from "./private/PrivateRoute.svelte";
+    import Account from "./user/Account.svelte";
+    import Create from "./Create.svelte";
 </script>
 
 
@@ -24,6 +27,12 @@
         <Route path="/register">
             <Register />
         </Route>
+        <PrivateRoute path="/account">
+            <Account />
+        </PrivateRoute>
+        <PrivateRoute path="/create">
+            <Create />
+        </PrivateRoute>
     </main>
 
     <Footer />

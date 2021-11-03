@@ -1,5 +1,7 @@
 use axum::body::{Body, BoxBody};
-use axum::http::header::{ACCESS_CONTROL_ALLOW_HEADERS, ACCESS_CONTROL_ALLOW_ORIGIN};
+use axum::http::header::{
+    ACCESS_CONTROL_ALLOW_HEADERS, ACCESS_CONTROL_ALLOW_METHODS, ACCESS_CONTROL_ALLOW_ORIGIN,
+};
 use axum::http::{HeaderValue, Method, Request, Response};
 use futures::Future;
 use std::marker::PhantomData;
@@ -82,6 +84,7 @@ fn insert_headers<Body>(mut req: Response<Body>) -> Response<Body> {
     let headers = req.headers_mut();
     headers.insert(ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*"));
     headers.insert(ACCESS_CONTROL_ALLOW_HEADERS, HeaderValue::from_static("*"));
+    headers.insert(ACCESS_CONTROL_ALLOW_METHODS, HeaderValue::from_static("*"));
     req
 }
 

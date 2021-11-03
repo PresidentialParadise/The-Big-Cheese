@@ -23,6 +23,9 @@ pub enum CheeseError {
     #[error("register")]
     Register(#[from] RegisterError),
 
+    #[error("hash password")]
+    Hash(#[from] bcrypt::BcryptError),
+
     #[error("authorization")]
     Authorization(#[from] AuthorizationError),
 }
@@ -74,12 +77,16 @@ impl IntoResponse for CheeseError {
                     response_error!(e, "user exists", StatusCode::CONFLICT)
                 }
             },
+            CheeseError::Hash(e) => response_error!(e, internal server error),
             CheeseError::Authorization(a) => match a {
                 e @ AuthorizationError::NoAuthorizationHeader => {
                     response_error!(e, "no authorization header", StatusCode::BAD_REQUEST)
                 }
                 e @ AuthorizationError::NoBearerPrefix => {
                     response_error!(e, "bad authorization header", StatusCode::BAD_REQUEST)
+                }
+                e @ AuthorizationError::NotFound => {
+                    response_error!(e, "bad request", StatusCode::BAD_REQUEST)
                 }
                 e @ AuthorizationError::NotAdmin => response_error!(
                     e,

@@ -11,6 +11,7 @@
     <nav class="flex flex-row">
         <Link to="/" class="mx-2"><span class="text-c-gray-2 font-bold">Home</span></Link>
         {#if $loggedIn}
+            <Link to="create" class="mx-2"><span class="text-c-gray-2 font-bold">Create Recipe</span></Link>
             <Link to="account" class="mx-2"><span class="text-c-gray-2 font-bold">Account</span></Link>
             <Link to="/" class="mx-2"><span class="text-c-gray-2 font-bold" on:click={doLogOut}>Logout</span></Link>
         {:else}

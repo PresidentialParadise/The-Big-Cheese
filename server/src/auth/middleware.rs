@@ -27,6 +27,9 @@ pub enum AuthorizationError {
     #[error("admin status is required for this route")]
     NotAdmin,
 
+    #[error("a user with this id does not exist")]
+    NotFound,
+
     #[error("this route can only be accessed for your own user or if you are admin")]
     NotSelf,
 }
@@ -384,8 +387,10 @@ async fn do_verify(request: &RequestParts) -> Result<User, AuthorizationError> {
         .and_then(|value| value.to_str().ok())
         .ok_or(AuthorizationError::NoAuthorizationHeader)?;
     let token_string = auth_header
-        .strip_prefix("Bearer ")
-        .ok_or(AuthorizationError::NoBearerPrefix)?;
+        .trim()
+        .strip_prefix("Bearer:")
+        .ok_or(AuthorizationError::NoBearerPrefix)?
+        .trim();
 
     let token = token_string
         .parse()

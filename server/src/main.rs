@@ -89,6 +89,7 @@ async fn main() {
             get(fetch_recipe).patch(update_recipe).delete(delete_recipe),
         )
         .route("/users", get(fetch_users))
+        .route("/users/me", get(fetch_me))
         .route(
             "/users/:id",
             get(fetch_user).patch(update_user).delete(delete_user),

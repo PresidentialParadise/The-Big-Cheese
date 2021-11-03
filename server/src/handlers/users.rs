@@ -11,7 +11,7 @@ use mongodb::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::auth::middleware::{AdminAuth, AuthorizationError, SelfOrAdminAuth};
+use crate::auth::middleware::{AdminAuth, Auth, AuthorizationError, SelfOrAdminAuth};
 use crate::models::Token;
 use crate::{
     auth,
@@ -29,9 +29,18 @@ pub async fn fetch_users(
     let mut users: Vec<User> = cursor.try_collect().await?;
     for u in &mut users {
         u.hashed_password = String::new();
+        u.tokens = vec![];
     }
 
     Ok(Json(UserList { users }))
+}
+
+pub async fn fetch_me(auth: Auth) -> Result<Json<User>, CheeseError> {
+    let mut user = auth.0;
+    user.hashed_password = String::new();
+    user.tokens = vec![];
+
+    Ok(Json(user))
 }
 
 pub async fn fetch_user(
@@ -47,14 +56,22 @@ pub async fn fetch_user(
 
     if let Some(ref mut user) = res {
         user.hashed_password = String::new();
+        user.tokens = vec![];
     }
 
     Ok(Json(res))
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct UpdateUser {
+    password: Option<String>,
+    admin: Option<bool>,
+    display_name: Option<String>,
+}
+
 pub async fn update_user(
     Path(id): Path<String>,
-    Json(user): Json<User>,
+    Json(new_user): Json<UpdateUser>,
     Extension(db_client): Extension<DBClient>,
     auth: SelfOrAdminAuth,
 ) -> Result<Json<UpdateResult>, CheeseError> {
@@ -62,14 +79,24 @@ pub async fn update_user(
 
     let req_user = auth.user_by_id(&id)?;
 
-    // if the requesting user is not an admin, they can not set themselves to be admin
-    if user.admin && !req_user.admin {
-        return Err(AuthorizationError::NotAdmin.into());
-    }
+    let mut user = db_client
+        .user_repo
+        .get_user_by_id(id)
+        .await?
+        .ok_or(AuthorizationError::NotFound)?;
 
-    // if the requesting user is different from the id in the body, error
-    if user.id != req_user.id {
-        return Err(AuthorizationError::NotSelf.into());
+    if let Some(i) = new_user.password {
+        user.hashed_password = bcrypt::hash(i, bcrypt::DEFAULT_COST)?;
+    }
+    if let Some(i) = new_user.display_name {
+        user.display_name = i;
+    }
+    if let Some(i) = new_user.admin {
+        if req_user.admin {
+            user.admin = i;
+        } else {
+            return Err(AuthorizationError::NotAdmin.into());
+        }
     }
 
     let res = db_client.user_repo.update_user(id, user).await?;
@@ -116,13 +143,41 @@ pub async fn login(
 
 #[cfg(test)]
 mod tests {
-    use crate::auth::middleware::{AdminAuth, SelfOrAdminAuth};
-    use crate::handlers::{fetch_user, fetch_users, update_user};
+    use crate::auth::middleware::{AdminAuth, Auth, SelfOrAdminAuth};
+    use crate::handlers::{fetch_me, fetch_user, fetch_users, update_user, UpdateUser};
     use crate::models::User;
     use crate::test_util::test_db;
     use axum::extract::{Extension, Path};
     use axum::Json;
     use mongodb::bson::oid::ObjectId;
+
+    #[test]
+    pub fn get_me_sanitized() {
+        test_db(|client| async move {
+            let id = ObjectId::new();
+
+            let user = User {
+                id: Some(id),
+                username: "a".to_string(),
+                display_name: "b".to_string(),
+                hashed_password: "c".to_string(),
+                admin: false,
+                recipes: vec![],
+                tokens: vec![],
+            };
+
+            client.user_repo.create_user(user.clone()).await.unwrap();
+
+            let res = fetch_me(Auth(user.clone())).await.unwrap().0;
+
+            assert_eq!(&res.id, &Some(id));
+            assert_eq!(&res.username, &user.username);
+
+            // blanked out
+            assert_eq!(res.hashed_password, "");
+            assert_eq!(res.tokens, vec![]);
+        });
+    }
 
     #[test]
     pub fn get_user_sanitized() {
@@ -155,7 +210,8 @@ mod tests {
             assert_eq!(&res.username, &user.username);
 
             // blanked out
-            assert_eq!(res.hashed_password, "")
+            assert_eq!(res.hashed_password, "");
+            assert_eq!(res.tokens, vec![]);
         });
     }
 
@@ -193,6 +249,7 @@ mod tests {
 
             for i in res {
                 assert_eq!(i.hashed_password, "");
+                assert_eq!(i.tokens, vec![]);
             }
         });
     }
@@ -212,8 +269,11 @@ mod tests {
                 tokens: vec![],
             };
 
-            let mut admin_user = user.clone();
-            admin_user.admin = true;
+            let admin_user = UpdateUser {
+                password: None,
+                admin: Some(true),
+                display_name: None,
+            };
 
             client.user_repo.create_user(user.clone()).await.unwrap();
 
@@ -254,8 +314,11 @@ mod tests {
                 tokens: vec![],
             };
 
-            let mut admin_user = user2.clone();
-            admin_user.admin = true;
+            let admin_user = UpdateUser {
+                password: None,
+                admin: Some(true),
+                display_name: None,
+            };
 
             client.user_repo.create_user(user1.clone()).await.unwrap();
             client.user_repo.create_user(user2.clone()).await.unwrap();
@@ -268,37 +331,6 @@ mod tests {
             )
             .await
             .is_ok())
-        });
-    }
-
-    #[test]
-    pub fn wrong_id_in_path() {
-        test_db(|client| async {
-            let id = ObjectId::new();
-
-            let user = User {
-                id: Some(id),
-                username: "a".to_string(),
-                display_name: "b".to_string(),
-                hashed_password: "c".to_string(),
-                admin: false,
-                recipes: vec![],
-                tokens: vec![],
-            };
-
-            let mut req_user = user.clone();
-            req_user.id = Some(ObjectId::new());
-
-            client.user_repo.create_user(user.clone()).await.unwrap();
-
-            assert!(update_user(
-                Path(id.to_string()),
-                Json(req_user),
-                Extension(client),
-                SelfOrAdminAuth::new_for_test(user.clone())
-            )
-            .await
-            .is_err())
         });
     }
 }

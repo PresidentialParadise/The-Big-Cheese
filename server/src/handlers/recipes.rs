@@ -10,6 +10,7 @@ use mongodb::{
     results::{DeleteResult, InsertOneResult, UpdateResult},
 };
 
+use crate::auth::middleware::Auth;
 use crate::{db_connection::DBClient, error::CheeseError, models::Recipe};
 
 pub async fn fetch_recipes(
@@ -34,6 +35,7 @@ pub async fn fetch_recipe(
 pub async fn push_recipe(
     Json(recipe): Json<Recipe>,
     Extension(db_client): Extension<DBClient>,
+    _user: Auth,
 ) -> Result<Json<InsertOneResult>, CheeseError> {
     let res = db_client.recipe_repo.create_recipe(recipe).await?;
     Ok(Json(res))
