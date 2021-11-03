@@ -31,14 +31,94 @@ pub enum AuthorizationError {
     NotSelf,
 }
 
+/// Add this as a parameter to a route to get access to the currently logged in user.
+/// This route is only available when that user is logged in.
+///
+/// To get the user out, you need to provide some information about the user that made the request.
+/// This struct is useful for routes where a user may only make this request if that request applies
+/// to themselves
+///
+/// WARNING: without calling either the [`user`] or [`user_by_id`] functions, proper authentication
+/// does not occur.
 #[must_use = "You must check whether this user actually is the user specified in the request"]
 pub struct SelfAuth(User);
+
+/// Add this as a parameter to a route to get access to the currently logged in user.
+/// This route is only available when that user is logged in.
+///
+/// To get the user out, you need to provide some information about the user that made the request.
+/// This struct is useful for routes where a user may only make this request if that request applies
+/// to themselves. However, this route is also available for admins.
+///
+/// WARNING: without calling either the [`user`] or [`user_by_id`] functions, proper authentication
+/// does not occur.
 #[must_use = "You must check whether this user actually is the user specified in the request"]
 pub struct SelfOrAdminAuth(User);
+
+/// Add this as a parameter to a route to get access to the currently logged in user.
+/// This route is only available when that user is logged in.
 pub struct Auth(pub User);
+
+/// Add this as a parameter to a route to get access to the currently logged in user.
+/// This route is only available when that user is logged in and is an admin.
 pub struct AdminAuth(pub User);
 
 impl SelfAuth {
+    /// Get the user inside this `SelfAuth` by providing their username.
+    ///
+    /// ```
+    /// use big_cheese_server::auth::middleware::SelfAuth;
+    /// # use big_cheese_server::models::User;
+    /// # use mongodb::bson::oid::ObjectId;
+    ///
+    /// let id = ObjectId::new();
+    ///
+    /// let user = User {
+    ///     id: Some(id),
+    ///     username: "1".into(),
+    ///     display_name: "2".into(),
+    ///     hashed_password: "3".into(),
+    ///     admin: false,
+    ///
+    ///     recipes: vec![],
+    ///     tokens: vec![],
+    /// };
+    ///
+    /// let sa = SelfAuth::new_for_test(user.clone());
+    ///
+    /// // wrong name
+    /// assert!(sa.user("").is_err());
+    ///
+    /// // to get the user out again you must prove that this request was made to apply to that user.
+    /// // in this case we know their username so we can use it as proof
+    ///
+    /// assert_eq!(sa.user(&user.username).unwrap(), &user)
+    /// ```
+    ///
+    /// Even admins
+    /// ```
+    /// use big_cheese_server::auth::middleware::SelfAuth;
+    /// # use big_cheese_server::models::User;
+    /// # use mongodb::bson::oid::ObjectId;
+    ///
+    /// let id = ObjectId::new();
+    ///
+    /// let user = User {
+    ///     id: Some(id),
+    ///     username: "1".into(),
+    ///     display_name: "2".into(),
+    ///     hashed_password: "3".into(),
+    ///     admin: true,
+    ///
+    ///     recipes: vec![],
+    ///     tokens: vec![],
+    /// };
+    ///
+    /// let sa = SelfAuth::new_for_test(user.clone());
+    ///
+    /// // wrong name and admin, but with SelfAuth still unauthorized
+    /// assert!(sa.user("").is_err());
+    /// ```
     #[allow(unused)]
     pub fn user(&self, username: &str) -> Result<&User, AuthorizationError> {
         if self.0.username == username {
@@ -48,6 +128,60 @@ impl SelfAuth {
         }
     }
 
+    /// Get the user inside this `SelfAuth` by providing their user id.
+    ///
+    /// ```
+    /// use big_cheese_server::auth::middleware::SelfAuth;
+    /// # use big_cheese_server::models::User;
+    /// # use mongodb::bson::oid::ObjectId;
+    ///
+    /// let id = ObjectId::new();
+    ///
+    /// let user = User {
+    ///     id: Some(id),
+    ///     username: "1".into(),
+    ///     display_name: "2".into(),
+    ///     hashed_password: "3".into(),
+    ///     admin: false,
+    ///
+    ///     recipes: vec![],
+    ///     tokens: vec![],
+    /// };
+    ///
+    /// let sa = SelfAuth::new_for_test(user.clone());
+    ///
+    /// // wrong id
+    /// assert!(sa.user_by_id(&ObjectId::new()).is_err());
+    ///
+    /// // to get the user out again you must prove that this request was made to apply to that user.
+    /// // in this case we know their user id so we can use it as proof
+    ///
+    /// assert_eq!(sa.user_by_id(&id).unwrap(), &user)
+    /// ```
+    ///
+    /// ```
+    /// use big_cheese_server::auth::middleware::SelfAuth;
+    /// # use big_cheese_server::models::User;
+    /// # use mongodb::bson::oid::ObjectId;
+    ///
+    /// let id = ObjectId::new();
+    ///
+    /// let user = User {
+    ///     id: Some(id),
+    ///     username: "1".into(),
+    ///     display_name: "2".into(),
+    ///     hashed_password: "3".into(),
+    ///     admin: true,
+    ///
+    ///     recipes: vec![],
+    ///     tokens: vec![],
+    /// };
+    ///
+    /// let sa = SelfAuth::new_for_test(user.clone());
+    ///
+    /// // wrong id, but admin. However, with SelfAuth still unauthorized
+    /// assert!(sa.user_by_id(&ObjectId::new()).is_err());
+    /// ```
     #[allow(unused)]
     pub fn user_by_id(&self, id: &ObjectId) -> Result<&User, AuthorizationError> {
         if self.0.id == Some(*id) {
@@ -55,6 +189,12 @@ impl SelfAuth {
         } else {
             Err(AuthorizationError::NotSelf)
         }
+    }
+
+    /// Construct a `SelfAuth` for use in tests (with a known user inside it).
+    #[allow(unused)]
+    pub fn new_for_test(user: User) -> Self {
+        Self(user)
     }
 }
 
@@ -69,6 +209,61 @@ impl FromRequest<Body> for SelfAuth {
 }
 
 impl SelfOrAdminAuth {
+    /// Get the user inside this `SelfOrAdminAuth` by providing their username.
+    ///
+    /// ```
+    /// use big_cheese_server::auth::middleware::SelfOrAdminAuth;
+    /// # use big_cheese_server::models::User;
+    /// # use mongodb::bson::oid::ObjectId;
+    ///
+    /// let id = ObjectId::new();
+    ///
+    /// let user = User {
+    ///     id: Some(id),
+    ///     username: "1".into(),
+    ///     display_name: "2".into(),
+    ///     hashed_password: "3".into(),
+    ///     admin: false,
+    ///
+    ///     recipes: vec![],
+    ///     tokens: vec![],
+    /// };
+    ///
+    /// let sa = SelfOrAdminAuth::new_for_test(user.clone());
+    ///
+    /// // wrong name
+    /// assert!(sa.user("").is_err());
+    ///
+    /// // to get the user out again you must prove that this request was made to apply to that user.
+    /// // in this case we know their username so we can use it as proof
+    ///
+    /// assert_eq!(sa.user(&user.username).unwrap(), &user)
+    /// ```
+    ///
+    /// Admins are always authorized though, even when the name is wrong
+    /// ```
+    /// use big_cheese_server::auth::middleware::SelfOrAdminAuth;
+    /// # use big_cheese_server::models::User;
+    /// # use mongodb::bson::oid::ObjectId;
+    ///
+    /// let id = ObjectId::new();
+    ///
+    /// let user = User {
+    ///     id: Some(id),
+    ///     username: "1".into(),
+    ///     display_name: "2".into(),
+    ///     hashed_password: "3".into(),
+    ///     admin: true,
+    ///
+    ///     recipes: vec![],
+    ///     tokens: vec![],
+    /// };
+    ///
+    /// let sa = SelfOrAdminAuth::new_for_test(user.clone());
+    ///
+    /// // wrong name but not admin so authorized
+    /// assert!(sa.user("").is_ok());
+    /// ```
     #[allow(unused)]
     pub fn user(&self, username: &str) -> Result<&User, AuthorizationError> {
         if self.0.username == username || self.0.admin {
@@ -78,6 +273,60 @@ impl SelfOrAdminAuth {
         }
     }
 
+    /// Get the user inside this `SelfOrAdminAuth` by providing their user id.
+    ///
+    /// ```
+    /// use big_cheese_server::auth::middleware::SelfOrAdminAuth;
+    /// # use big_cheese_server::models::User;
+    /// # use mongodb::bson::oid::ObjectId;
+    ///
+    /// let id = ObjectId::new();
+    ///
+    /// let user = User {
+    ///     id: Some(id),
+    ///     username: "1".into(),
+    ///     display_name: "2".into(),
+    ///     hashed_password: "3".into(),
+    ///     admin: false,
+    ///
+    ///     recipes: vec![],
+    ///     tokens: vec![],
+    /// };
+    ///
+    /// let sa = SelfOrAdminAuth::new_for_test(user.clone());
+    ///
+    /// // wrong id
+    /// assert!(sa.user_by_id(&ObjectId::new()).is_err());
+    ///
+    /// // to get the user out again you must prove that this request was made to apply to that user.
+    /// // in this case we know their user id so we can use it as proof
+    ///
+    /// assert_eq!(sa.user_by_id(&id).unwrap(), &user)
+    /// ```
+    ///
+    /// ```
+    /// use big_cheese_server::auth::middleware::SelfOrAdminAuth;
+    /// # use big_cheese_server::models::User;
+    /// # use mongodb::bson::oid::ObjectId;
+    ///
+    /// let id = ObjectId::new();
+    ///
+    /// let user = User {
+    ///     id: Some(id),
+    ///     username: "1".into(),
+    ///     display_name: "2".into(),
+    ///     hashed_password: "3".into(),
+    ///     admin: true,
+    ///
+    ///     recipes: vec![],
+    ///     tokens: vec![],
+    /// };
+    ///
+    /// let sa = SelfOrAdminAuth::new_for_test(user.clone());
+    ///
+    /// // wrong id, but admin so authorized
+    /// assert!(sa.user_by_id(&ObjectId::new()).is_ok());
+    /// ```
     #[allow(unused)]
     pub fn user_by_id(&self, id: &ObjectId) -> Result<&User, AuthorizationError> {
         if self.0.id == Some(*id) || self.0.admin {
@@ -85,6 +334,12 @@ impl SelfOrAdminAuth {
         } else {
             Err(AuthorizationError::NotSelf)
         }
+    }
+
+    /// Construct a `SelfOrAdminAuth` for use in tests (with a known user inside it).
+    #[allow(unused)]
+    pub fn new_for_test(user: User) -> Self {
+        Self(user)
     }
 }
 

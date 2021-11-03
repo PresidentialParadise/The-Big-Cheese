@@ -9,6 +9,8 @@ edition = "2021"
 dotenv = "0.15.0"
 axum = {git="https://github.com/tokio-rs/axum", branch="main"}
 tower = "0.4.10"
+#tower-http = {version="0.1.1", features=["set-header"]}
+pin-project = "1.0.8"
 mongodb = "2.0.1"
 serde = "1.0.130"
 tokio = "1.12.0"
