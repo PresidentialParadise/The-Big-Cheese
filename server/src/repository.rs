@@ -133,7 +133,7 @@ impl Users {
         self.collection.delete_one(doc! { "_id": id }, None).await
     }
 
-    pub async fn first_user(&self, name: &str, password: &str) -> Result<(), CheeseError> {
+    pub async fn create_initial_user(&self, name: &str, password: &str) -> Result<(), CheeseError> {
         if self.get_all_users().await?.next().await.is_none() {
             register(self, name, password).await?;
             tracing::info!(

@@ -39,6 +39,7 @@ mod handlers;
 mod models;
 mod repository;
 
+#[cfg(any(doctest, test))]
 pub mod test_util;
 
 #[allow(clippy::wildcard_imports)]
@@ -71,7 +72,7 @@ async fn main() {
         .expect("couldn't set default meta");
     client
         .user_repo
-        .first_user(&admin_user_name, &admin_user_password)
+        .create_initial_user(&admin_user_name, &admin_user_password)
         .await
         .expect("couldn't create initial user");
 

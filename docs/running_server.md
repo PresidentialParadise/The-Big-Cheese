@@ -7,7 +7,7 @@ variables. These can be set manually, or put in a dotenv (.env) file.
 
 * `DB_URI` should be of the form `mongodb://[username:password@]host[:port]`. \
   Note that the default port for mongodb is 27017. For testing this will likely work:
-  `mongodb://localhost:27017`
+  `mongodb://localhost:27017`. For more options, refer to the [mongodb docs](https://docs.mongodb.com/manual/reference/connection-string/).
 * `DB_NAME` is the name of the database and can be pretty much any string as you would
   expect.
 * `ADMIN_USER_NAME` is the name of the initial user (which is created and made admin when no previous users existed).

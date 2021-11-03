@@ -30,6 +30,7 @@ impl DBClient {
     }
 
     #[doc(hidden)]
+    #[allow(unused)] // used in tests
     pub async fn delete_db(&self) {
         self.database.drop(None).await.expect("couldn't drop db");
     }
