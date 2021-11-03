@@ -27,6 +27,10 @@ pub enum CheeseError {
     Authorization(#[from] AuthorizationError),
 }
 
+/// `response_error` takes an error (something implementing Display), a literal string
+/// (error message included in response) and a status code. The error is logged, and
+/// response is built based on message and status. There is a special case for internal
+/// server errors because of its frequent use.
 macro_rules! response_error {
     ($e: expr, internal server error) => {
         response_error!(
