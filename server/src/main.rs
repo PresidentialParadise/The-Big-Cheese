@@ -15,26 +15,41 @@
 //! - `DELETE /users/:id`: delete a specific User.
 
 #![warn(clippy::all, clippy::pedantic)]
-#![allow(clippy::unused_async)]
-use std::env;
+#![allow(
+    clippy::unused_async,
+    clippy::missing_errors_doc,
+    clippy::must_use_candidate
+)]
 
-use axum::{handler::get, AddExtensionLayer, Router};
-use dotenv::dotenv;
-
-use std::net::SocketAddr;
-
-use crate::db_connection::DBClient;
-
+mod auth;
+mod cors;
 mod db_connection;
 mod error;
 mod handlers;
 mod models;
 mod repository;
 
+pub mod test_util;
+
+use std::env;
+
+use axum::{
+    routing::{get, post},
+    AddExtensionLayer, Router,
+};
+use dotenv::dotenv;
+
+use std::net::SocketAddr;
+
+use crate::db_connection::DBClient;
+
 #[allow(clippy::wildcard_imports)]
 use handlers::*;
 
+use rand::prelude::IteratorRandom;
 use tracing::{event, Level};
+
+use big_cheese_server::cors::CorsLayer;
 
 #[tokio::main]
 async fn main() {
@@ -46,10 +61,23 @@ async fn main() {
 
     let client_uri = env::var("DB_URI").expect("Missing DB_URI in .env");
     let db_name = env::var("DB_NAME").expect("Missing DB_NAME in .env");
+    let admin_user_name = env::var("ADMIN_USER_NAME").unwrap_or_else(|_| "admin".to_string());
+    let admin_user_password = env::var("ADMIN_USER_PASSWORD").unwrap_or_else(|_| random_password());
 
     let client = DBClient::new(client_uri, &db_name)
         .await
         .expect("Failed to connect to mongodb client");
+
+    client
+        .meta_repo
+        .set_default_meta_if_not_exists()
+        .await
+        .expect("couldn't set default meta");
+    client
+        .user_repo
+        .first_user(&admin_user_name, &admin_user_password)
+        .await
+        .expect("couldn't create initial user");
 
     // build our application with a route
     let app = Router::new()
@@ -59,12 +87,15 @@ async fn main() {
             "/recipes/:id",
             get(fetch_recipe).patch(update_recipe).delete(delete_recipe),
         )
-        .route("/users", get(fetch_users).post(push_user))
+        .route("/users", get(fetch_users))
         .route(
             "/users/:id",
             get(fetch_user).patch(update_user).delete(delete_user),
         )
-        .layer(AddExtensionLayer::new(client));
+        .route("/users/register", post(register))
+        .route("/users/login", post(login))
+        .layer(AddExtensionLayer::new(client))
+        .layer(CorsLayer::default());
 
     // run it
     let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
@@ -74,4 +105,17 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
+}
+
+fn random_password() -> String {
+    const PASSWORD_ALPHABET: &str =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    let mut pw = String::new();
+    let mut rng = rand::thread_rng();
+
+    for _ in 0..16 {
+        pw.push(PASSWORD_ALPHABET.chars().choose(&mut rng).unwrap());
+    }
+    pw
 }
