@@ -67,6 +67,11 @@ pub async fn update_user(
         return Err(AuthorizationError::NotAdmin.into());
     }
 
+    // if the requesting user is different from the id in the body, error
+    if user.id != req_user.id {
+        return Err(AuthorizationError::NotSelf.into());
+    }
+
     let res = db_client.user_repo.update_user(id, user).await?;
 
     Ok(Json(res))
@@ -263,6 +268,37 @@ mod tests {
             )
             .await
             .is_ok())
+        });
+    }
+
+    #[test]
+    pub fn wrong_id_in_path() {
+        test_db(|client| async {
+            let id = ObjectId::new();
+
+            let user = User {
+                id: Some(id),
+                username: "a".to_string(),
+                display_name: "b".to_string(),
+                hashed_password: "c".to_string(),
+                admin: false,
+                recipes: vec![],
+                tokens: vec![],
+            };
+
+            let mut req_user = user.clone();
+            req_user.id = Some(ObjectId::new());
+
+            client.user_repo.create_user(user.clone()).await.unwrap();
+
+            assert!(update_user(
+                Path(id.to_string()),
+                Json(req_user),
+                Extension(client),
+                SelfOrAdminAuth::new_for_test(user.clone())
+            )
+            .await
+            .is_err())
         });
     }
 }
