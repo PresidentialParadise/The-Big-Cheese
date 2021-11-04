@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 dotenv = "0.15.0"
-axum = {git="https://github.com/tokio-rs/axum", branch="main"}
+axum = "0.3.0"
 tower = "0.4.10"
 mongodb = "2.0.1"
 serde = "1.0.130"
