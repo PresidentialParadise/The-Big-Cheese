@@ -16,10 +16,11 @@
 
 #![warn(clippy::all, clippy::pedantic)]
 #![allow(clippy::unused_async)]
-use std::env;
+use std::{env, time::Duration};
 
-use axum::{handler::get, AddExtensionLayer, Router};
+use axum::{routing::get, AddExtensionLayer, Router};
 use dotenv::dotenv;
+use tower_http::cors::{Any, CorsLayer};
 
 use std::net::SocketAddr;
 
@@ -51,6 +52,15 @@ async fn main() {
         .await
         .expect("Failed to connect to mongodb client");
 
+    // Permissive cors
+    let cors = CorsLayer::new()
+        .allow_credentials(true)
+        .allow_headers(Any)
+        .allow_methods(Any)
+        .allow_origin(Any)
+        .expose_headers(Any)
+        .max_age(Duration::from_secs(60 * 60));
+
     // build our application with a route
     let app = Router::new()
         .route("/", get(index))
@@ -64,7 +74,8 @@ async fn main() {
             "/users/:id",
             get(fetch_user).patch(update_user).delete(delete_user),
         )
-        .layer(AddExtensionLayer::new(client));
+        .layer(AddExtensionLayer::new(client))
+        .layer(cors);
 
     // run it
     let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
