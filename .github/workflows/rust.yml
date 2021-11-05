@@ -3,10 +3,6 @@ on: [push, pull_request]
 
 name: Rust
 
-defaults:
-  run:
-    working-directory: server
-
 jobs:
   check:
     name: Check
@@ -26,7 +22,6 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --manifest-path server/Cargo.toml
 
   lints:
     name: Lints
@@ -47,10 +42,8 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --manifest-path server/Cargo.toml --all -- --check
 
       - name: Run cargo clippy
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --manifest-path server/Cargo.toml -- -W clippy::pedantic -D warnings

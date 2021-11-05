@@ -11,10 +11,9 @@ env:
   REGISTRY: registry.xirion.net
 
 jobs:
-  publish_server:
+  publish:
     runs-on: ubuntu-latest
     env:
-      working-directory: ./server
       IMAGE_NAME: library/the-big-cheese
     permissions:
       contents: read
