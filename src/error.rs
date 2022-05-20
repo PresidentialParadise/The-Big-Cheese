@@ -1,8 +1,10 @@
 #![allow(clippy::module_name_repetitions)]
 use axum::{
-    http::{Response, StatusCode},
-    response::IntoResponse,
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    Json,
 };
+use serde_json::json;
 use thiserror::Error;
 use tracing::{event, Level};
 
@@ -15,25 +17,28 @@ pub enum CheeseError {
 }
 
 impl IntoResponse for CheeseError {
-    type Body = axum::body::Body;
-
-    type BodyError = <Self::Body as axum::body::HttpBody>::Error;
-
-    fn into_response(self) -> axum::http::Response<Self::Body> {
-        let bb = match self {
+    fn into_response(self) -> Response {
+        let (status, err_msg) = match self {
             Self::Mongo(e) => {
                 event!(Level::ERROR, "MongoDB error: {:?}", e);
-                Self::Body::from("MongoDB did a fuckywucky")
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "MongoDB did a fuckywucky",
+                )
             }
             Self::Oid(e) => {
                 event!(Level::ERROR, "ObjectID error: {:?}", e);
-                Self::Body::from("ObjectID did a fuckywucky")
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "ObjectID did a fuckywucky",
+                )
             }
         };
 
-        Response::builder()
-            .status(StatusCode::INTERNAL_SERVER_ERROR)
-            .body(bb)
-            .unwrap()
+        let body = Json(json!({
+            "error": err_msg,
+        }));
+
+        (status, body).into_response()
     }
 }

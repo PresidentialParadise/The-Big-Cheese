@@ -18,7 +18,7 @@
 #![allow(clippy::unused_async)]
 use std::env;
 
-use axum::{handler::get, AddExtensionLayer, Router};
+use axum::{routing::get, Extension, Router};
 use dotenv::dotenv;
 
 use std::net::SocketAddr;
@@ -51,20 +51,26 @@ async fn main() {
         .await
         .expect("Failed to connect to mongodb client");
 
-    // build our application with a route
-    let app = Router::new()
-        .route("/", get(index))
-        .route("/recipes", get(fetch_recipes).post(push_recipe))
-        .route(
-            "/recipes/:id",
-            get(fetch_recipe).patch(update_recipe).delete(delete_recipe),
-        )
+    let user_routes = Router::new()
         .route("/users", get(fetch_users).post(push_user))
         .route(
             "/users/:id",
             get(fetch_user).patch(update_user).delete(delete_user),
-        )
-        .layer(AddExtensionLayer::new(client));
+        );
+
+    let recipe_routes = Router::new()
+        .route("/recipes", get(fetch_recipes).post(push_recipe))
+        .route(
+            "/recipes/:id",
+            get(fetch_recipe).patch(update_recipe).delete(delete_recipe),
+        );
+
+    // build our application with a route
+    let app = Router::new()
+        .route("/", get(index))
+        .merge(user_routes)
+        .merge(recipe_routes)
+        .layer(Extension(client));
 
     // run it
     let addr = SocketAddr::from(([127, 0, 0, 1], 8000));

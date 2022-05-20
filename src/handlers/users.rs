@@ -2,7 +2,8 @@ use std::str::FromStr;
 
 use axum::{
     extract::{Extension, Path},
-    Json,
+    routing::get,
+    Json, Router,
 };
 use futures::TryStreamExt;
 use mongodb::{
@@ -15,6 +16,15 @@ use crate::{
     error::CheeseError,
     models::{User, UserList},
 };
+
+pub fn user_routes() -> Router {
+    Router::new()
+        .route("/users", get(fetch_users).post(push_user))
+        .route(
+            "/users/:id",
+            get(fetch_user).patch(update_user).delete(delete_user),
+        )
+}
 
 pub async fn fetch_users(
     Extension(db_client): Extension<DBClient>,
@@ -37,20 +47,20 @@ pub async fn fetch_user(
 }
 
 pub async fn push_user(
-    Json(recipe): Json<User>,
+    Json(user): Json<User>,
     Extension(db_client): Extension<DBClient>,
 ) -> Result<Json<InsertOneResult>, CheeseError> {
-    let res = db_client.user_repo.create_user(recipe).await?;
+    let res = db_client.user_repo.create_user(user).await?;
     Ok(Json(res))
 }
 
 pub async fn update_user(
     Path(id): Path<String>,
-    Json(recipe): Json<User>,
+    Json(user): Json<User>,
     Extension(db_client): Extension<DBClient>,
 ) -> Result<Json<UpdateResult>, CheeseError> {
     let obj_id = ObjectId::from_str(&id)?;
-    let res = db_client.user_repo.update_user(obj_id, recipe).await?;
+    let res = db_client.user_repo.update_user(obj_id, user).await?;
 
     Ok(Json(res))
 }
