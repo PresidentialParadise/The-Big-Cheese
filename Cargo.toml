@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 dotenv = "0.15.0"
-axum = "0.5.4"
+axum = "0.5.6"
 mongodb = "2.0.1"
 serde = "1.0.137"
 serde_json = "1.0.81"
