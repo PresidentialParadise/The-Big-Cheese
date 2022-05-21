@@ -2,7 +2,8 @@ use std::str::FromStr;
 
 use axum::{
     extract::{Extension, Path},
-    Json,
+    routing::get,
+    Json, Router,
 };
 use futures::TryStreamExt;
 use mongodb::{
@@ -11,6 +12,15 @@ use mongodb::{
 };
 
 use crate::{db_connection::DBClient, error::CheeseError, models::Recipe};
+
+pub fn recipe_routes() -> Router {
+    Router::new()
+        .route("/recipes", get(fetch_recipes).post(push_recipe))
+        .route(
+            "/recipes/:id",
+            get(fetch_recipe).patch(update_recipe).delete(delete_recipe),
+        )
+}
 
 pub async fn fetch_recipes(
     Extension(db_client): Extension<DBClient>,

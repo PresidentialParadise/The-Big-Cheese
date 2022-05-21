@@ -60,25 +60,11 @@ async fn main() {
         .expose_headers(Any)
         .max_age(Duration::from_secs(60 * 60));
 
-    let user_routes = Router::new()
-        .route("/users", get(fetch_users).post(push_user))
-        .route(
-            "/users/:id",
-            get(fetch_user).patch(update_user).delete(delete_user),
-        );
-
-    let recipe_routes = Router::new()
-        .route("/recipes", get(fetch_recipes).post(push_recipe))
-        .route(
-            "/recipes/:id",
-            get(fetch_recipe).patch(update_recipe).delete(delete_recipe),
-        );
-
     // build our application with a route
     let app = Router::new()
         .route("/", get(index))
-        .merge(user_routes)
-        .merge(recipe_routes)
+        .merge(user_routes())
+        .merge(recipe_routes())
         .layer(Extension(client))
         .layer(cors);
 
