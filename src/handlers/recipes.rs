@@ -11,7 +11,7 @@ use mongodb::{
     results::{DeleteResult, InsertOneResult, UpdateResult},
 };
 
-use crate::{db_connection::DBClient, error::CheeseError, models::Recipe};
+use crate::{db::DBClient, error::CheeseError, models::Recipe};
 
 pub fn recipe_routes() -> Router {
     Router::new()

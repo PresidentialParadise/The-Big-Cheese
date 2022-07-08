@@ -12,7 +12,7 @@ use mongodb::{
 };
 
 use crate::{
-    db_connection::DBClient,
+    db::DBClient,
     error::CheeseError,
     models::{User, UserList},
 };

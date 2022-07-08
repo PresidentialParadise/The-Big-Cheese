@@ -24,9 +24,9 @@ use tower_http::cors::{Any, CorsLayer};
 
 use std::net::SocketAddr;
 
-use crate::db_connection::DBClient;
+use crate::db::DBClient;
 
-mod db_connection;
+mod db;
 mod error;
 mod handlers;
 mod models;
@@ -35,7 +35,7 @@ mod repository;
 #[allow(clippy::wildcard_imports)]
 use handlers::*;
 
-use tracing::{event, Level};
+use tracing::{event, info, Level};
 
 #[tokio::main]
 async fn main() {
@@ -48,12 +48,14 @@ async fn main() {
     let client_uri = env::var("DB_URI").expect("Missing DB_URI in .env");
     let db_name = env::var("DB_NAME").expect("Missing DB_NAME in .env");
 
+    println!("{}", &client_uri);
+
     let client = DBClient::new(client_uri, &db_name)
         .await
         .expect("Failed to connect to mongodb client");
 
     let cors = CorsLayer::new()
-        .allow_credentials(true)
+        // .allow_credentials(true)
         .allow_headers(Any)
         .allow_methods(Any)
         .allow_origin(Any)
@@ -70,7 +72,7 @@ async fn main() {
 
     // run it
     let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
-    event!(Level::INFO, "listening on http://{}", addr);
+    info!("listening on http://localhost:{}", 8000);
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
