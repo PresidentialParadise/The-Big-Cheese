@@ -10,10 +10,12 @@ use tracing::{event, Level};
 
 #[derive(Error, Debug)]
 pub enum CheeseError {
-    #[error("MongoDB encountered an error")]
+    #[error("Encountered a MongoDB error")]
     Mongo(#[from] mongodb::error::Error),
     #[error("Encountered an ObjectID error")]
     Oid(#[from] mongodb::bson::oid::Error),
+    #[error("Encountered a Bcrypt error")]
+    Bcrypt(#[from] bcrypt::BcryptError),
 }
 
 impl IntoResponse for CheeseError {
@@ -32,6 +34,10 @@ impl IntoResponse for CheeseError {
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "ObjectID did a fuckywucky",
                 )
+            }
+            Self::Bcrypt(e) => {
+                event!(Level::ERROR, "Bcrypt error: {:?}", e);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Bcrypt did a fuckywucky")
             }
         };
 

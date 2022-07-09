@@ -1,5 +1,4 @@
 use mongodb::bson::oid::ObjectId;
-// use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -63,7 +62,14 @@ pub struct User {
     pub id: Option<ObjectId>,
     pub username: String,
     pub display_name: String,
-    pub hashed_password: String,
+    pub hash: String,
     pub admin: bool,
     pub recipes: Vec<ObjectId>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Registration {
+    pub username: String,
+    pub display_name: String,
+    pub password: String,
 }

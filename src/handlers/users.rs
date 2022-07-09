@@ -5,6 +5,7 @@ use axum::{
     routing::get,
     Json, Router,
 };
+use bcrypt::hash;
 use futures::TryStreamExt;
 use mongodb::{
     bson::oid::ObjectId,
@@ -14,12 +15,12 @@ use mongodb::{
 use crate::{
     db::DBClient,
     error::CheeseError,
-    models::{User, UserList},
+    models::{Registration, User, UserList},
 };
 
 pub fn user_routes() -> Router {
     Router::new()
-        .route("/users", get(fetch_users).post(push_user))
+        .route("/users", get(fetch_users).post(register_user))
         .route(
             "/users/:id",
             get(fetch_user).patch(update_user).delete(delete_user),
@@ -46,10 +47,20 @@ pub async fn fetch_user(
     Ok(Json(res))
 }
 
-pub async fn push_user(
-    Json(user): Json<User>,
+pub async fn register_user(
+    Json(details): Json<Registration>,
     Extension(db_client): Extension<DBClient>,
 ) -> Result<Json<InsertOneResult>, CheeseError> {
+    let hash = hash(&details.password, 10)?;
+    let user = User {
+        id: None,
+        username: details.username,
+        display_name: details.display_name,
+        hash,
+        admin: false,
+        recipes: vec![],
+    };
+
     let res = db_client.user_repo.create_user(user).await?;
     Ok(Json(res))
 }
