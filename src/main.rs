@@ -48,8 +48,6 @@ async fn main() {
     let client_uri = env::var("DB_URI").expect("Missing DB_URI in .env");
     let db_name = env::var("DB_NAME").expect("Missing DB_NAME in .env");
 
-    println!("{}", &client_uri);
-
     let client = DBClient::new(client_uri, &db_name)
         .await
         .expect("Failed to connect to mongodb client");
