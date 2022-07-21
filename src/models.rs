@@ -1,5 +1,20 @@
+use std::str::FromStr;
+
+use axum::{
+    async_trait,
+    extract::{FromRequest, RequestParts},
+    headers::{authorization::Bearer, Authorization},
+    Extension, TypedHeader,
+};
+use jsonwebtoken::{decode, Validation};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
+
+use crate::{
+    auth::{jwt, Redirect, KEYS},
+    db::DBClient,
+    error::CheeseError,
+};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Measurement {
@@ -62,14 +77,40 @@ pub struct User {
     pub id: Option<ObjectId>,
     pub username: String,
     pub display_name: String,
-    pub hash: String,
+    pub password: String,
     pub admin: bool,
     pub recipes: Vec<ObjectId>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Registration {
+pub struct Details {
     pub username: String,
     pub display_name: String,
     pub password: String,
+}
+
+#[async_trait]
+impl<B> FromRequest<B> for Details
+where
+    B: Send,
+{
+    type Rejection = CheeseError;
+
+    async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
+        let TypedHeader(Authorization(bearer)) =
+            TypedHeader::<Authorization<Bearer>>::from_request(req)
+                .await
+                .map_err(|_| CheeseError::InvalidToken)?;
+
+        let Extension(db_client) = Extension::<DBClient>::from_request(req)
+            .await
+            .map_err(|_| CheeseError::InvalidToken)?;
+
+        let claims = jwt::verify(bearer.token())?;
+        Ok(Details {
+            username: "".to_string(),
+            display_name: "".to_string(),
+            password: "".to_string(),
+        })
+    }
 }

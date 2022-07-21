@@ -11,7 +11,7 @@ use mongodb::{
     results::{DeleteResult, InsertOneResult, UpdateResult},
 };
 
-use crate::{db::DBClient, error::CheeseError, models::Recipe};
+use crate::{db::DBClient, error::CheeseResult, models::Recipe};
 
 pub fn recipe_routes() -> Router {
     Router::new()
@@ -24,7 +24,7 @@ pub fn recipe_routes() -> Router {
 
 pub async fn fetch_recipes(
     Extension(db_client): Extension<DBClient>,
-) -> Result<Json<Vec<Recipe>>, CheeseError> {
+) -> CheeseResult<Json<Vec<Recipe>>> {
     let cursor = db_client.recipe_repo.get_all_recipes().await?;
 
     Ok(Json(cursor.try_collect().await?))
@@ -33,7 +33,7 @@ pub async fn fetch_recipes(
 pub async fn fetch_recipe(
     Path(id): Path<String>,
     Extension(db_client): Extension<DBClient>,
-) -> Result<Json<Option<Recipe>>, CheeseError> {
+) -> CheeseResult<Json<Option<Recipe>>> {
     let res = db_client
         .recipe_repo
         .read_recipe(ObjectId::from_str(&id)?)
@@ -44,7 +44,7 @@ pub async fn fetch_recipe(
 pub async fn push_recipe(
     Json(recipe): Json<Recipe>,
     Extension(db_client): Extension<DBClient>,
-) -> Result<Json<InsertOneResult>, CheeseError> {
+) -> CheeseResult<Json<InsertOneResult>> {
     let res = db_client.recipe_repo.create_recipe(recipe).await?;
     Ok(Json(res))
 }
@@ -53,7 +53,7 @@ pub async fn update_recipe(
     Path(id): Path<String>,
     Json(recipe): Json<Recipe>,
     Extension(db_client): Extension<DBClient>,
-) -> Result<Json<UpdateResult>, CheeseError> {
+) -> CheeseResult<Json<UpdateResult>> {
     let obj_id = ObjectId::from_str(&id)?;
     let res = db_client.recipe_repo.update_recipe(obj_id, recipe).await?;
 
@@ -63,7 +63,7 @@ pub async fn update_recipe(
 pub async fn delete_recipe(
     Path(id): Path<String>,
     Extension(db_client): Extension<DBClient>,
-) -> Result<Json<DeleteResult>, CheeseError> {
+) -> CheeseResult<Json<DeleteResult>> {
     let res = db_client
         .recipe_repo
         .delete_recipe(ObjectId::from_str(&id)?)

@@ -8,6 +8,11 @@ mod users;
 pub use recipes::*;
 pub use users::*;
 
-pub async fn index() -> impl IntoResponse {
-    "Hello World"
+use crate::models::Details;
+
+pub async fn index(user: Option<Details>) -> impl IntoResponse {
+    match user {
+        Some(u) => format!("Hey {}", u.display_name),
+        None => "Welcome, unknown user!".to_string(),
+    }
 }

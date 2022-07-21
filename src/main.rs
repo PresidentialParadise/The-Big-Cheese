@@ -26,6 +26,7 @@ use std::net::SocketAddr;
 
 use crate::db::DBClient;
 
+mod auth;
 mod db;
 mod error;
 mod handlers;
@@ -69,8 +70,9 @@ async fn main() {
         .layer(cors);
 
     // run it
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
-    info!("listening on http://localhost:{}", 8000);
+    let port = 8000;
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    info!("listening on http://localhost:{}", port);
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())

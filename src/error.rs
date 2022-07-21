@@ -8,36 +8,41 @@ use serde_json::json;
 use thiserror::Error;
 use tracing::{event, Level};
 
+pub type CheeseResult<T> = Result<T, CheeseError>;
+// pub type CheeseApiError = (StatusCode, Json<Value>);
+// pub type CheeseApiResult<T> = Result<T, CheeseApiError>;
+
 #[derive(Error, Debug)]
 pub enum CheeseError {
-    #[error("Encountered a MongoDB error")]
-    Mongo(#[from] mongodb::error::Error),
-    #[error("Encountered an ObjectID error")]
-    Oid(#[from] mongodb::bson::oid::Error),
-    #[error("Encountered a Bcrypt error")]
+    #[error(transparent)]
     Bcrypt(#[from] bcrypt::BcryptError),
+    #[error(transparent)]
+    JwtError(#[from] jsonwebtoken::errors::Error),
+    #[error(transparent)]
+    Mongo(#[from] mongodb::error::Error),
+    #[error(transparent)]
+    Oid(#[from] mongodb::bson::oid::Error),
+    #[error("This username is already in use.")]
+    UsernameExists,
+    #[error("Missing credentials")]
+    MissingCredentials,
+    #[error("Invalid credentials")]
+    InvalidCredentials,
+    #[error("Failed to generate token")]
+    TokenCreation,
+    #[error("Invalid token")]
+    InvalidToken,
 }
 
 impl IntoResponse for CheeseError {
     fn into_response(self) -> Response {
         let (status, err_msg) = match self {
-            Self::Mongo(e) => {
-                event!(Level::ERROR, "MongoDB error: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "MongoDB did a fuckywucky",
-                )
-            }
-            Self::Oid(e) => {
-                event!(Level::ERROR, "ObjectID error: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "ObjectID did a fuckywucky",
-                )
-            }
-            Self::Bcrypt(e) => {
-                event!(Level::ERROR, "Bcrypt error: {:?}", e);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Bcrypt did a fuckywucky")
+            Self::UsernameExists => (StatusCode::CONFLICT, self.to_string()),
+            Self::InvalidCredentials => (StatusCode::UNAUTHORIZED, self.to_string()),
+            Self::InvalidToken => (StatusCode::BAD_REQUEST, self.to_string()),
+            _ => {
+                event!(Level::ERROR, "{:?}", self);
+                (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
             }
         };
 

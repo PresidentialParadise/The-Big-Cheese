@@ -50,12 +50,19 @@ impl Users {
     pub fn new(users: Collection<User>) -> Users {
         Users { collection: users }
     }
+
     pub async fn create_user(&self, user: User) -> Result<InsertOneResult, Error> {
         self.collection.insert_one(user, None).await
     }
 
-    pub async fn read_user(&self, id: ObjectId) -> Result<Option<User>, Error> {
+    pub async fn find_user_by_id(&self, id: ObjectId) -> Result<Option<User>, Error> {
         self.collection.find_one(doc! { "_id": id}, None).await
+    }
+
+    pub async fn find_user_by_name(&self, name: &str) -> Result<Option<User>, Error> {
+        self.collection
+            .find_one(doc! {"username": name}, None)
+            .await
     }
 
     pub async fn get_all_users(&self) -> Result<mongodb::Cursor<User>, Error> {
