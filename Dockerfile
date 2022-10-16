@@ -1,4 +1,4 @@
-FROM lukemathwalker/cargo-chef:latest-rust-1.56.0-alpine as chef
+FROM lukemathwalker/cargo-chef:latest-rust-1.64.0-alpine as chef
 WORKDIR /app
 
 FROM chef AS planner
@@ -17,6 +17,8 @@ RUN cargo chef cook --release --recipe-path recipe.json
 # Build application
 COPY . .
 RUN cargo build --release --offline --bin big_cheese_server
+
+
 
 FROM alpine:edge AS runtime
 WORKDIR /app
